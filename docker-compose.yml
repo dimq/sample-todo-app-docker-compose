@@ -1,0 +1,34 @@
+version: "3.0"
+services:
+  mariadb:
+    image: mariadb:latest
+    environment:
+      TZ: Europe/Paris
+      MYSQL_ROOT_PASSWORD: memos
+      MYSQL_DATABASE: memos-db
+      MYSQL_USER: memos
+      MYSQL_PASSWORD: memos
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  memos:
+    image: neosmemo/memos:stable
+    container_name: memos
+    environment:
+      MEMOS_DRIVER: mysql
+      MEMOS_DSN: memos:memos@tcp(mariadb:3306)/memos-db
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - ~/.memos/:/var/opt/memos
+    ports:
+      - "5230:5230"
+
+volumes:
+  mariadb_data:
